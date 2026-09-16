@@ -1,0 +1,36 @@
+name: Daily Gold Rate Updater
+
+on:
+  schedule:
+    # Roz Indian Time subah 09:30 AM (04:00 UTC)
+    - cron: '0 4 * * *'
+  workflow_dispatch: # Manual test button
+
+jobs:
+  update-blog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Google GenAI SDK
+        run: pip install google-genai
+
+      - name: Run Updater
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOLD_API_KEY: ${{ secrets.GOLD_API_KEY }}
+        run: python updater.py
+
+      - name: Push Updates
+        run: |
+          git config --global user.name "AutoBot"
+          git config --global user.email "bot@github.actions"
+          git add index.html
+          git commit -m "Auto updated rates for $(date +'%Y-%m-%d')" || exit 0
+          git push
